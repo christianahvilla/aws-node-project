@@ -1,6 +1,15 @@
 service: aws-node-project
 frameworkVersion: '3'
 
+package:
+  individually: true
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-plugin-common-excludes # this should go before serverless-plugin-include-dependencies
+  - serverless-plugin-include-dependencies
+
 provider:
   name: aws
   runtime: nodejs18.x
@@ -23,54 +32,107 @@ provider:
 
 functions:
   getProductsById:
-    handler: product.product
+    handler: handlers/products/get.get
+    memorySize: 256
     url: true
+    # adding the following:
+    role: DynamoDBLambdaAccessRole
+    environment:
+      STOCK_TABLE: !Ref StockDynamoDbTable
+      PRODUCT_TABLE: !Ref ProductDynamoDbTable
     events:
-      - http:
-          path: products/{id}
+      - httpApi:
+          path: /products/{id}
           method: get
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
   getProductList:
-    handler: products.products
+    handler: handlers/products/list.list
     url: true
+    memorySize: 256
+    # adding the following:
+    role: DynamoDBLambdaAccessRole
+    environment:
+      STOCK_TABLE: !Ref StockDynamoDbTable
+      PRODUCT_TABLE: !Ref ProductDynamoDbTable
     events: 
-        - http: 
-            path: products
+        - httpApi: 
+            path: /products
             method: get
-            cors:
-              origin: "*"
-              headers:
-                - Content-Type
-                - X-Amz-Date
-                - Authorization
-                - X-Api-Key
-                - X-Amz-Security-Token
-                - X-Amz-User-Agent
+  createProduct:
+    handler: handlers/products/create.create
+    url: true
+    memorySize: 256
+    # adding the following:
+    role: DynamoDBLambdaAccessRole
+    environment:
+      STOCK_TABLE: !Ref StockDynamoDbTable
+      PRODUCT_TABLE: !Ref ProductDynamoDbTable
+    events:
+        - httpApi: 
+            path: /products
+            method: post
 resources:
   Resources:
-    GatewayResponseDefault4XX:
-      Type: 'AWS::ApiGateway::GatewayResponse'
+    StockDynamoDbTable: 
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
       Properties:
-        ResponseParameters:
-          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,<your-custom-header-goes-here>'"
-        ResponseType: DEFAULT_4XX
-        RestApiId:
-          Ref: 'ApiGatewayRestApi'
-    GatewayResponseDefault5XX:
-      Type: 'AWS::ApiGateway::GatewayResponse'
+        AttributeDefinitions:
+          - AttributeName: product_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: product_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: stocks
+    ProductDynamoDbTable: 
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
       Properties:
-        ResponseParameters:
-          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,<your-custom-header-goes-here>'"
-        ResponseType: DEFAULT_5XX
-        RestApiId:
-          Ref: 'ApiGatewayRestApi'
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: products
+    DynamoDBLambdaAccessRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: dynamodb
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'dynamodb:BatchGetItem'
+                    - 'dynamodb:BatchWriteItem'
+                    - 'dynamodb:PutItem'
+                    - 'dynamodb:DeleteItem'
+                    - 'dynamodb:GetItem'
+                    - 'dynamodb:Scan'
+                    - 'dynamodb:Query'
+                    - 'dynamodb:UpdateItem'
+                    - 'dynamodb:PartiQL*'
+                  Resource:
+                    - !GetAtt StockDynamoDbTable.Arn
+                    - !Sub
+                      - ${Table}/*
+                      - Table: !GetAtt StockDynamoDbTable.Arn
+                    - !GetAtt ProductDynamoDbTable.Arn
+                    - !Sub
+                      - ${Table}/*
+                      - Table: !GetAtt ProductDynamoDbTable.Arn

@@ -1,72 +1,36 @@
-<!--
-title: 'AWS NodeJS Example'
-description: 'This template demonstrates how to deploy a NodeJS function running on AWS Lambda using the traditional Serverless Framework.'
-layout: Doc
-framework: v3
-platform: AWS
-language: nodeJS
-priority: 1
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
+# AWS-Node-Project
 
+This is backend application to handle storefront using AWS
 
-# Serverless Framework AWS NodeJS Example
+- [AWS](https://aws.amazon.com/?nc1=h_ls) as a cloud platform
+- [Node](https://beta.reactjs.org/) as a frontend framework
+- [Serverless](https://serverless.com/) as a serverless framework
+- [TypeScript](https://www.typescriptlang.org/) as a type checking tool
 
-This template demonstrates how to deploy a NodeJS function running on AWS Lambda using the traditional Serverless Framework. The deployed function does not include any event definitions as well as any kind of persistence (database). For more advanced configurations check out the [examples repo](https://github.com/serverless/examples/) which includes integrations with SQS, DynamoDB or examples of functions that are triggered in `cron`-like manner. For details about configuration of specific `events`, please refer to our [documentation](https://www.serverless.com/framework/docs/providers/aws/events/).
+## Available Scripts
 
-## Usage
+### `sls deploy`
 
-### Deployment
+To create S3, API Gateway, DynamoDB and Lambda functions of this application.
 
-In order to deploy the example, you need to run the following command:
+## Task 4
 
-```
-$ serverless deploy
-```
+### [getProducts](https://5koi4jml6a.execute-api.us-east-1.amazonaws.com/products)
+- Available method: GET
+### [getProductsById/{id}](https://5koi4jml6a.execute-api.us-east-1.amazonaws.com/products/03b70a83-01fa-4434-93e0-fc36430fb1)
+- Available id: `03b70a83-01fa-4434-93e0-fc36430fb191`
+- Available method: GET
 
-After running deploy, you should see output similar to:
-
-```bash
-Deploying aws-node-project to stage dev (us-east-1)
-
-✔ Service deployed to stack aws-node-project-dev (112s)
-
-functions:
-  hello: aws-node-project-dev-hello (1.5 kB)
-```
-
-### Invocation
-
-After successful deployment, you can invoke the deployed function by using the following command:
-
-```bash
-serverless invoke --function hello
-```
-
-Which should result in response similar to the following:
-
-```json
-{
-    "statusCode": 200,
-    "body": "{\n  \"message\": \"Go Serverless v3.0! Your function executed successfully!\",\n  \"input\": {}\n}"
-}
-```
-
-### Local development
-
-You can invoke your function locally by using the following command:
-
-```bash
-serverless invoke local --function hello
-```
-
-Which should result in response similar to the following:
-
+### [createProduct](https://5koi4jml6a.execute-api.us-east-1.amazonaws.com/products)
+- Available method: POST
+- Available route: https://5koi4jml6a.execute-api.us-east-1.amazonaws.com/products
+- Body: 
 ```
 {
-    "statusCode": 200,
-    "body": "{\n  \"message\": \"Go Serverless v3.0! Your function executed successfully!\",\n  \"input\": \"\"\n}"
+  "description": "SIM-Free, Model A19211 6.5-inch Super Retina HD display with OLED technology A12 Bionic chip with ...",
+    "price": 899,
+    "image": "https://i.dummyjson.com/data/products/2/thumbnail.jpg",
+    "title": "iPhone X",
+    "count": 34
 }
 ```
